@@ -1,0 +1,669 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>T15 Animator and Editor (HTML)</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #202020;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Top toolbar */
+        #toolbar {
+            background: #202020;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+            #toolbar .title {
+                font-weight: bold;
+                margin-right: 20px;
+            }
+
+            #toolbar button, #toolbar input {
+                margin-right: 5px;
+            }
+
+        /* Main area */
+        #main {
+            display: flex;
+            height: calc(100vh - 40px - 90px - 50px);
+            background: #303030;
+        }
+
+        /* Left tools */
+        #tools {
+            width: 80px;
+            background: #252525;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+            #tools h3 {
+                font-size: 14px;
+                margin: 5px 0 10px 0;
+            }
+
+            #tools button {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+        /* Center canvas */
+        #center {
+            flex: 1;
+            background: #404040;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #drawCanvas {
+            background: white;
+            border: 1px solid #111;
+        }
+
+        /* Right properties */
+        #properties {
+            width: 180px;
+            background: #252525;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+            #properties h3 {
+                font-size: 14px;
+                margin: 5px 0 10px 0;
+            }
+
+        label {
+            font-size: 13px;
+        }
+
+        /* Timeline */
+        #timeline {
+            height: 90px;
+            background: #202020;
+            padding-top: 5px;
+            box-sizing: border-box;
+        }
+
+        #timelineFrames {
+            display: flex;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+            #timelineFrames button {
+                width: 30px;
+                margin-right: 5px;
+            }
+
+        #timelineControls {
+            display: flex;
+            padding: 5px 10px;
+            box-sizing: border-box;
+        }
+
+            #timelineControls button {
+                margin-right: 5px;
+            }
+
+        /* Bottom bar */
+        #bottomBar {
+            height: 50px;
+            background: #181818;
+            position: relative;
+        }
+
+        #bottomPlus {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            font-weight: bold;
+            width: 50px;
+            height: 40px;
+            background: #303030;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Edit Menu (modal) */
+        #editMenuOverlay {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #editMenu {
+            width: 250px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 15px;
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+        }
+
+            #editMenu h3 {
+                margin-top: 0;
+                text-align: center;
+            }
+
+            #editMenu button {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+        /* Common button styling */
+        button {
+            cursor: pointer;
+        }
+
+        input[type="number"] {
+            width: 50px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top toolbar -->
+    <div id="toolbar">
+        <span class="title">T15 Animator and Editor</span>
+        <button id="btnNew">New</button>
+        <button id="btnSave">Save (WIP)</button>
+        <button id="btnOpen">Open (WIP)</button>
+
+        <span style="margin-left: 20px;"></span>
+
+        <button id="btnPlay">Play</button>
+        <button id="btnStop">Stop</button>
+
+        <span style="margin-left: 20px;">FPS:</span>
+        <input type="number" id="fpsInput" value="6" min="1">
+        <button id="btnSetFPS">Set</button>
+    </div>
+
+    <!-- Main layout -->
+    <div id="main">
+        <!-- Tools -->
+        <div id="tools">
+            <h3>Tools</h3>
+            <button data-tool="brush">Brush</button>
+            <button data-tool="eraser">Eraser</button>
+            <button data-tool="fill">Fill</button>
+            <button data-tool="select">Select</button>
+        </div>
+
+        <!-- Canvas center -->
+        <div id="center">
+            <canvas id="drawCanvas" width="640" height="360"></canvas>
+        </div>
+
+        <!-- Properties -->
+        <div id="properties">
+            <h3>Properties</h3>
+            <div>
+                <label>Tool:</label>
+                <div id="toolName" style="color: yellow; margin-bottom: 10px;">Brush</div>
+            </div>
+            <div>
+                <label for="brushSize">Brush size:</label><br>
+                <input type="range" id="brushSize" min="1" max="30" value="3">
+            </div>
+            <div style="margin-top: 15px;">
+                <label>
+                    <input type="checkbox" id="onionSkin" checked>
+                    Show previous frame
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div id="timeline">
+        <div id="timelineFrames"></div>
+        <div id="timelineControls">
+            <button id="btnAddFrame">+ Frame</button>
+            <button id="btnDuplicateFrame">Duplicate</button>
+            <button id="btnDeleteFrame">Delete</button>
+        </div>
+    </div>
+
+    <!-- Bottom bar with + -->
+    <div id="bottomBar">
+        <button id="bottomPlus">+</button>
+    </div>
+
+    <!-- Edit menu modal -->
+    <div id="editMenuOverlay">
+        <div id="editMenu">
+            <h3>Edit Menu</h3>
+            <button id="menuAddFrame">Add Frame</button>
+            <button id="menuDuplicateFrame">Duplicate Frame</button>
+            <button id="menuDeleteFrame">Delete Frame</button>
+            <button id="menuClearSelection">Clear Selection</button>
+            <button id="menuClose">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // ---- Data models ----
+        class Stroke {
+        constructor(points, color, size) {
+        this.points = points; // [{x,y}, ...]
+        this.color = color;
+        this.size = size;
+        }
+        }
+
+        class FrameData {
+        constructor() {
+        this.strokes = [];
+        }
+        }
+
+        // ---- Global state ----
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let frames = [];
+        let currentFrameIndex = 0;
+
+        let currentTool = 'brush';
+        let brushColor = 'black';
+        let brushSize = 3;
+
+        let drawing = false;
+        let currentPoints = [];
+        let lastX = null;
+        let lastY = null;
+
+        let selectionStart = null;
+        let selectedStrokes = [];
+        let isMovingSelection = false;
+        let moveLastX = null;
+        let moveLastY = null;
+
+        let isPlaying = false;
+        let fps = 6;
+
+        // ---- UI references ----
+        const fpsInput = document.getElementById('fpsInput');
+        const toolName = document.getElementById('toolName');
+        const brushSizeInput = document.getElementById('brushSize');
+        const onionSkinCheckbox = document.getElementById('onionSkin');
+        const timelineFramesDiv = document.getElementById('timelineFrames');
+        const editMenuOverlay = document.getElementById('editMenuOverlay');
+
+        // ---- Init ----
+        function init() {
+        newProject();
+        bindUIEvents();
+        updateUI();
+        }
+
+        function bindUIEvents() {
+        // Top toolbar
+        document.getElementById('btnNew').addEventListener('click', () => {
+        if (confirm('Start a new project?')) {
+        newProject();
+        }
+        });
+
+        document.getElementById('btnSave').addEventListener('click', () => {
+        alert('Save (WIP) – not implemented yet.');
+        });
+
+        document.getElementById('btnOpen').addEventListener('click', () => {
+        alert('Open (WIP) – not implemented yet.');
+        });
+
+        document.getElementById('btnPlay').addEventListener('click', () => {
+        if (!isPlaying) {
+        isPlaying = true;
+        playLoop();
+        }
+        });
+
+        document.getElementById('btnStop').addEventListener('click', () => {
+        isPlaying = false;
+        });
+
+        document.getElementById('btnSetFPS').addEventListener('click', () => {
+        const val = parseInt(fpsInput.value, 10);
+        if (!isNaN(val) && val > 0) {
+        fps = val;
+        } else {
+        alert('FPS must be a positive number.');
+        fpsInput.value = fps;
+        }
+        });
+
+        // Tools
+        document.querySelectorAll('#tools button[data-tool]').forEach(btn => {
+        btn.addEventListener('click', () => {
+        setTool(btn.getAttribute('data-tool'));
+        });
+        });
+
+        // Brush size
+        brushSizeInput.addEventListener('input', () => {
+        brushSize = parseInt(brushSizeInput.value, 10);
+        });
+
+        // Onion skin
+        onionSkinCheckbox.addEventListener('change', () => {
+        refreshCanvas();
+        });
+
+        // Timeline controls
+        document.getElementById('btnAddFrame').addEventListener('click', addFrame);
+        document.getElementById('btnDuplicateFrame').addEventListener('click', duplicateFrame);
+        document.getElementById('btnDeleteFrame').addEventListener('click', deleteFrame);
+
+        // Bottom + menu
+        document.getElementById('bottomPlus').addEventListener('click', openEditMenu);
+        document.getElementById('menuClose').addEventListener('click', closeEditMenu);
+        document.getElementById('menuAddFrame').addEventListener('click', () => {
+        addFrame();
+        closeEditMenu();
+        });
+        document.getElementById('menuDuplicateFrame').addEventListener('click', () => {
+        duplicateFrame();
+        closeEditMenu();
+        });
+        document.getElementById('menuDeleteFrame').addEventListener('click', () => {
+        deleteFrame();
+        closeEditMenu();
+        });
+        document.getElementById('menuClearSelection').addEventListener('click', () => {
+        clearSelection();
+        closeEditMenu();
+        });
+
+        // Canvas events
+        canvas.addEventListener('mousedown', onCanvasDown);
+        canvas.addEventListener('mousemove', onCanvasMove);
+        canvas.addEventListener('mouseup', onCanvasUp);
+        canvas.addEventListener('mouseleave', onCanvasUp);
+        }
+
+        // ---- Project / frames ----
+        function newProject() {
+        frames = [new FrameData()];
+        currentFrameIndex = 0;
+        isPlaying = false;
+        clearSelection();
+        updateUI();
+        }
+
+        function addFrame() {
+        frames.push(new FrameData());
+        currentFrameIndex = frames.length - 1;
+        updateUI();
+        }
+
+        function duplicateFrame() {
+        const current = frames[currentFrameIndex];
+        const newFrame = new FrameData();
+        current.strokes.forEach(s => {
+        newFrame.strokes.push(new Stroke(
+        s.points.map(p => ({ x: p.x, y: p.y })),
+        s.color,
+        s.size
+        ));
+        });
+        frames.splice(currentFrameIndex + 1, 0, newFrame);
+        currentFrameIndex++;
+        updateUI();
+        }
+
+        function deleteFrame() {
+        if (frames.length <= 1) {
+        alert('At least one frame must exist.');
+        return;
+        }
+        frames.splice(currentFrameIndex, 1);
+        currentFrameIndex = Math.max(0, currentFrameIndex - 1);
+        updateUI();
+        }
+
+        function setCurrentFrame(index) {
+        currentFrameIndex = index;
+        clearSelection();
+        updateUI();
+        }
+
+        // ---- Tools ----
+        function setTool(tool) {
+        currentTool = tool;
+        toolName.textContent = tool.charAt(0).toUpperCase() + tool.slice(1);
+        clearSelection();
+        refreshCanvas();
+        }
+
+        // ---- Canvas events ----
+        function getMousePos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+        };
+        }
+
+        function onCanvasDown(evt) {
+        const { x, y } = getMousePos(evt);
+
+        if (currentTool === 'brush' || currentTool === 'eraser') {
+        drawing = true;
+        currentPoints = [{ x, y }];
+        lastX = x;
+        lastY = y;
+        } else if (currentTool === 'fill') {
+        applyFill(x, y);
+        } else if (currentTool === 'select') {
+        selectionStart = { x, y };
+        if (selectedStrokes.length > 0) {
+        isMovingSelection = true;
+        moveLastX = x;
+        moveLastY = y;
+        }
+        }
+        }
+
+        function onCanvasMove(evt) {
+        const { x, y } = getMousePos(evt);
+
+        if ((currentTool === 'brush' || currentTool === 'eraser') && drawing) {
+        const color = (currentTool === 'brush') ? brushColor : 'white';
+        const size = (currentTool === 'brush') ? brushSize : brushSize + 4;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = size;
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.closePath();
+
+        currentPoints.push({ x, y });
+        lastX = x;
+        lastY = y;
+        } else if (currentTool === 'select') {
+        if (isMovingSelection && selectedStrokes.length > 0) {
+        const dx = x - moveLastX;
+        const dy = y - moveLastY;
+        selectedStrokes.forEach(s => {
+        s.points.forEach(p => {
+        p.x += dx;
+        p.y += dy;
+        });
+        });
+        moveLastX = x;
+        moveLastY = y;
+        refreshCanvas();
+        }
+        }
+        }
+
+        function onCanvasUp(evt) {
+        if ((currentTool === 'brush' || currentTool === 'eraser') && drawing) {
+        drawing = false;
+        if (currentPoints.length > 1) {
+        const color = (currentTool === 'brush') ? brushColor : 'white';
+        const size = (currentTool === 'brush') ? brushSize : brushSize + 4;
+        frames[currentFrameIndex].strokes.push(
+        new Stroke(currentPoints.slice(), color, size)
+        );
+        }
+        currentPoints = [];
+        refreshCanvas();
+        } else if (currentTool === 'select') {
+        const { x, y } = getMousePos(evt);
+        if (!isMovingSelection && selectionStart) {
+        const xMin = Math.min(selectionStart.x, x);
+        const xMax = Math.max(selectionStart.x, x);
+        const yMin = Math.min(selectionStart.y, y);
+        const yMax = Math.max(selectionStart.y, y);
+
+        selectedStrokes = [];
+        const frame = frames[currentFrameIndex];
+        frame.strokes.forEach(s => {
+        for (const p of s.points) {
+        if (p.x >= xMin && p.x <= xMax && p.y >= yMin && p.y <= yMax) {
+        selectedStrokes.push(s);
+        break;
+        }
+        }
+        });
+        }
+        isMovingSelection = false;
+        selectionStart = null;
+        refreshCanvas();
+        }
+        }
+
+        // ---- Fill ----
+        function applyFill(x, y) {
+        const size = Math.max(40, brushSize * 5);
+        const color = brushColor;
+        const points = [];
+
+        for (let px = x - size; px < x + size; px += 4) {
+        for (let py = y - size; py < y + size; py += 4) {
+        if ((px - x) ** 2 + (py - y) ** 2 <= size ** 2) {
+        points.push({ x: px, y: py });
+        }
+        }
+        }
+
+        if (points.length > 0) {
+        frames[currentFrameIndex].strokes.push(new Stroke(points, color, 6));
+        refreshCanvas();
+        }
+        }
+
+        // ---- Selection ----
+        function clearSelection() {
+        selectedStrokes = [];
+        selectionStart = null;
+        isMovingSelection = false;
+        moveLastX = null;
+        moveLastY = null;
+        refreshCanvas();
+        }
+
+        // ---- Rendering ----
+        function refreshCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (onionSkinCheckbox.checked && currentFrameIndex > 0) {
+        drawFrame(frames[currentFrameIndex - 1], true);
+        }
+
+        drawFrame(frames[currentFrameIndex], false);
+        }
+
+        function drawFrame(frameData, ghost) {
+        frameData.strokes.forEach(s => {
+        if (s.points.length < 2) return;
+        let color = s.color;
+        if (ghost) {
+        color = '#d0d0d0';
+        } else if (selectedStrokes.includes(s)) {
+        color = 'cyan';
+        }
+        ctx.strokeStyle = color;
+        ctx.lineWidth = s.size;
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        for (let i = 0; i < s.points.length - 1; i++) {
+        const p1 = s.points[i];
+        const p2 = s.points[i + 1];
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        }
+        ctx.stroke();
+        ctx.closePath();
+        });
+        }
+
+        // ---- Timeline UI ----
+        function rebuildTimelineButtons() {
+        timelineFramesDiv.innerHTML = '';
+        frames.forEach((frame, i) => {
+        const btn = document.createElement('button');
+        btn.textContent = i + 1;
+        if (i === currentFrameIndex) {
+        btn.style.backgroundColor = 'yellow';
+        }
+        btn.addEventListener('click', () => setCurrentFrame(i));
+        timelineFramesDiv.appendChild(btn);
+        });
+        }
+
+        function updateUI() {
+        rebuildTimelineButtons();
+        refreshCanvas();
+        }
+
+        // ---- Animation ----
+        function playLoop() {
+        if (!isPlaying) return;
+        currentFrameIndex = (currentFrameIndex + 1) % frames.length;
+        updateUI();
+        setTimeout(playLoop, 1000 / fps);
+        }
+
+        // ---- Edit menu ----
+        function openEditMenu() {
+        editMenuOverlay.style.display = 'flex';
+        }
+
+        function closeEditMenu() {
+        editMenuOverlay.style.display = 'none';
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
